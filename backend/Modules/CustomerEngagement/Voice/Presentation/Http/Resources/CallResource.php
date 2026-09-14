@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\CustomerEngagement\Voice\Presentation\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\CustomerEngagement\Voice\Domain\Enums\CallerVerificationLevel;
 
 /**
  * Never serializes transcript_ref/recording_ref content — those are pointers, resolved only via
@@ -35,6 +36,10 @@ class CallResource extends JsonResource
             'handled_by' => $this->handled_by?->value,
             'transferred_at' => $this->transferred_at?->toIso8601String(),
             'transfer_target_type' => $this->transfer_target_type,
+            // TASK-...-016 §17 — caller-verification UX must reflect only a backend-confirmed
+            // state; this is the exact same value CallerVerificationService/VoiceAIToolInvoker
+            // read, never a second/derived computation.
+            'verification_level' => $this->metadata['verification_level'] ?? CallerVerificationLevel::Unverified->value,
             'has_transcript' => $this->transcript_ref !== null,
             'has_recording' => $this->recording_ref !== null,
             'created_at' => $this->created_at?->toIso8601String(),

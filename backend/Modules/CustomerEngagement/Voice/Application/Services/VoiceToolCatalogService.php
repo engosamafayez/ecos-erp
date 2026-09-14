@@ -13,12 +13,11 @@ use Modules\CustomerEngagement\Voice\Domain\Enums\CallerVerificationLevel;
  * verification: the approved expanded scope").
  *
  * This governs what is OFFERED in RealtimeVoiceSessionConfig.toolDefinitions — a session-config-
- * time gate, not by itself the hard security boundary (VoiceAIToolInvoker's own permission/scope
- * checks remain that regardless of what was offered). Foundation-scoped deliberately: enforcing
- * this per-call at the invoker layer too requires per-call state to flow into AIRequestContext,
- * which has no live caller to test against until a concrete realtime provider exists (external
- * dependency) — noted explicitly in the task report as a Task 2 / later refinement, not silently
- * treated as already complete.
+ * time gate. As of TASK-ECOS-V1.1-CRM-03-VOICE-UX-AND-FINAL-SOURCE-CLOSURE-016 §5 (Gap B),
+ * {@see requiresVerification()} (the same VERIFIED_ONLY_TOOL_NAMES list, exposed as a per-name
+ * check) is ALSO consulted by VoiceAIToolInvoker at the final execution choke point — offering
+ * and executing are no longer the same trust boundary; being offered a tool never implies it is
+ * executable.
  */
 final class VoiceToolCatalogService
 {
@@ -47,5 +46,15 @@ final class VoiceToolCatalogService
         }
 
         return self::BASE_TOOL_NAMES;
+    }
+
+    /**
+     * §5 (Gap B) — the single source of truth for "does this tool need caller verification",
+     * consulted both when building a session's offered tool list (above) and, independently, by
+     * VoiceAIToolInvoker at invocation time. One list, two callers — not two policies.
+     */
+    public function requiresVerification(string $toolName): bool
+    {
+        return in_array($toolName, self::VERIFIED_ONLY_TOOL_NAMES, true);
     }
 }

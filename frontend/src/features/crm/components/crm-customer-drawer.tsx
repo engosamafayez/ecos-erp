@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { usePermission } from '@/features/authorization';
+import { useCustomerEngagementTimeline } from '@/features/customer-engagement/hooks/use-voice';
+import type { EngagementTimelineItem } from '@/features/customer-engagement/types/cep';
 import { CrmCustomerAnalyticsTab } from '@/features/crm/components/crm-customer-analytics-tab';
 import { CrmCustomerFollowUpTab } from '@/features/crm/components/crm-customer-followup-tab';
 import {
@@ -177,6 +179,14 @@ export function CrmCustomerDrawer({ customerId, open, onOpenChange, onEdit }: Pr
   const { data: tickets, isLoading: ticketsLoading } = useCrmCustomerTicketsQuery(
     customerId,
     open && tab === 'support',
+  );
+  const canViewCalls = can('cep.voice.use');
+  const { data: engagementTimeline, isLoading: callsLoading } = useCustomerEngagementTimeline(
+    customerId,
+    open && tab === 'calls' && canViewCalls,
+  );
+  const calls = (engagementTimeline ?? []).filter(
+    (item): item is Extract<EngagementTimelineItem, { type: 'call' }> => item.type === 'call',
   );
 
   const identity = profile?.identity;
@@ -490,6 +500,53 @@ export function CrmCustomerDrawer({ customerId, open, onOpenChange, onEdit }: Pr
         </ul>
       ),
     },
+    // Hidden entirely without cep.voice.use, matching this drawer's own convention below
+    // ("Hidden without the permission rather than shown disabled") — never a fake empty state
+    // that implies Voice data exists and simply failed to load.
+    ...(canViewCalls ? [{
+      key: 'calls',
+      label: t(($) => $.drawer.tabs.calls),
+      badge: calls.length || undefined,
+      content: callsLoading ? (
+        <Empty message={t(($) => $.drawer.timeline.loading)} />
+      ) : calls.length === 0 ? (
+        <Empty message={t(($) => $.drawer.callsTab.empty)} />
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {calls.map((item) => (
+            <li key={item.data.id} className="rounded-md border p-3 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="text-[10px]">
+                  {item.data.direction === 'inbound' ? t(($) => $.drawer.callsTab.inbound) : t(($) => $.drawer.callsTab.outbound)}
+                </Badge>
+                <Badge variant="secondary" className="text-[10px]">
+                  {t(($) => $.drawer.callsTab.state[item.data.canonical_state])}
+                </Badge>
+                {item.data.handled_by && (
+                  <Badge variant="outline" className="text-[10px]">
+                    {t(($) => $.drawer.callsTab.handledBy[item.data.handled_by as 'ai' | 'human' | 'both'])}
+                  </Badge>
+                )}
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                <span>
+                  {t(($) => $.drawer.callsTab.duration)}:{' '}
+                  {item.data.duration_seconds != null
+                    ? `${Math.floor(item.data.duration_seconds / 60)}:${String(item.data.duration_seconds % 60).padStart(2, '0')}`
+                    : t(($) => $.drawer.callsTab.noOutcome)}
+                </span>
+                {item.data.outcome && (
+                  <span>{t(($) => $.drawer.callsTab.outcome)}: {item.data.outcome}</span>
+                )}
+              </div>
+              <time className="mt-0.5 block text-[11px] text-muted-foreground">
+                {new Date(item.occurred_at).toLocaleString()}
+              </time>
+            </li>
+          ))}
+        </ul>
+      ),
+    }] : []),
     {
       key: 'crm',
       label: t(($) => $.drawer.tabs.crm),

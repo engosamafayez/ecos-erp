@@ -1,5 +1,10 @@
 ﻿import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useConversations, useMessageThread, useSendMessage, useConversation, useResolveConversation, usePrivateNotes, useAddNote } from '../hooks/use-cep';
+import {
+  useVoiceChannelProviders, useInitiateOutboundCall, useRequestHumanTransfer,
+  useCallTranscript, useCallRecording,
+} from '../hooks/use-voice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -7,13 +12,261 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ds';
+import { usePermission } from '@/features/authorization';
+import { useOrganizationContext } from '@/features/organization/context/organization-context';
+import {
   CONVERSATION_STATUS_LABELS, PROVIDER_LABELS, PROVIDER_COLORS, STATUS_COLORS,
-  type ConversationStatus, type CommunicationProvider,
+  CALL_STATE_COLORS, CALL_TERMINAL_STATES,
+  type ConversationStatus, type CommunicationProvider, type Call, type OutboundCallPurpose,
 } from '../types/cep';
-import { Loader2, Send, Lock, RefreshCw } from 'lucide-react';
+import { Loader2, Send, Lock, RefreshCw, Phone, PhoneOutgoing, ShieldCheck, ShieldAlert } from 'lucide-react';
 
 const STATUSES: ConversationStatus[] = ['open', 'pending', 'waiting_customer', 'waiting_agent', 'resolved', 'closed'];
-const PROVIDERS: CommunicationProvider[] = ['whatsapp', 'messenger', 'instagram', 'email', 'live_chat', 'telegram', 'sms'];
+const PROVIDERS: CommunicationProvider[] = ['whatsapp', 'messenger', 'instagram', 'email', 'live_chat', 'telegram', 'sms', 'voice'];
+const OUTBOUND_PURPOSES: OutboundCallPurpose[] = ['transactional', 'requested_callback', 'support'];
+
+function formatCallDuration(seconds: number | null): string {
+  if (seconds == null) return '—';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+/** The Call a Voice conversation's header/actions should reflect: the latest active one, or
+ * failing that, the most recently started one — never an arbitrary/oldest row. */
+function currentCallOf(calls: Call[] | undefined): Call | null {
+  if (!calls || calls.length === 0) return null;
+  const active = calls.find((c) => !CALL_TERMINAL_STATES.includes(c.canonical_state));
+  return active ?? calls[0];
+}
+
+// ─── Voice: active-call bar (canonical state only — never a raw provider status) ──────────────
+
+export function VoiceCallBar({ call }: { call: Call }) {
+  const { t } = useTranslation('customer-engagement');
+  const { can } = usePermission();
+  const { toast } = useToast();
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const [refsOpen, setRefsOpen] = useState(false);
+
+  const transferMutation = useRequestHumanTransfer(call.id);
+  const canViewRecordings = can('cep.voice.recordings.view');
+  const { data: transcript } = useCallTranscript(call.id, refsOpen && canViewRecordings);
+  const { data: recording } = useCallRecording(call.id, refsOpen && canViewRecordings);
+
+  const isTerminal = CALL_TERMINAL_STATES.includes(call.canonical_state);
+  const canTransfer = can('cep.voice.transfer')
+    && !isTerminal && call.canonical_state !== 'human_active' && call.canonical_state !== 'transferring';
+
+  async function handleTransfer() {
+    const outcome = await transferMutation.mutateAsync({
+      reason: reason.trim() || t(($) => $.voice.callBar.transferButton),
+    });
+    setTransferOpen(false);
+    setReason('');
+    toast({
+      title: t(($) => $.voice.callBar.transferResult[outcome.result]),
+      type: outcome.result === 'bridged' ? 'success' : 'warning',
+    });
+  }
+
+  return (
+    <div className="border-b bg-muted/20 px-4 py-2 flex flex-wrap items-center gap-2 text-xs shrink-0">
+      <Phone className="size-3.5 text-muted-foreground shrink-0" />
+      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+        {t(($) => $.voice.callBar.direction[call.direction])}
+      </Badge>
+      <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${CALL_STATE_COLORS[call.canonical_state]}`}>
+        {t(($) => $.voice.callBar.state[call.canonical_state])}
+      </Badge>
+      {call.handled_by && (
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+          {t(($) => $.voice.callBar.handledBy[call.handled_by as 'ai' | 'human' | 'both'])}
+        </Badge>
+      )}
+      <Badge
+        variant="outline"
+        className={`text-[10px] px-1.5 py-0 gap-1 ${call.verification_level === 'order_corroborated' ? 'border-green-300 text-green-700' : 'text-muted-foreground'}`}
+      >
+        {call.verification_level === 'order_corroborated'
+          ? <ShieldCheck className="size-3" />
+          : <ShieldAlert className="size-3" />}
+        {t(($) => $.voice.callBar.verification[call.verification_level])}
+      </Badge>
+      {call.duration_seconds != null && (
+        <span className="text-muted-foreground">
+          {t(($) => $.voice.callBar.duration)}: {formatCallDuration(call.duration_seconds)}
+        </span>
+      )}
+
+      <div className="ms-auto flex items-center gap-1.5">
+        {canTransfer && (
+          <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" className="h-6 text-xs">
+                {t(($) => $.voice.callBar.transferButton)}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t(($) => $.voice.callBar.transferDialogTitle)}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">{t(($) => $.voice.callBar.transferReasonLabel)}</label>
+                <Textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder={t(($) => $.voice.callBar.transferReasonPlaceholder)}
+                  className="text-sm"
+                />
+              </div>
+              <DialogFooter>
+                <Button onClick={handleTransfer} disabled={transferMutation.isPending}>
+                  {transferMutation.isPending
+                    ? t(($) => $.voice.callBar.transferSubmitting)
+                    : t(($) => $.voice.callBar.transferSubmit)}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {(call.has_transcript || call.has_recording) && (
+          canViewRecordings ? (
+            <Dialog open={refsOpen} onOpenChange={setRefsOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-6 text-xs">
+                  {call.has_transcript ? t(($) => $.voice.callBar.viewTranscriptRef) : t(($) => $.voice.callBar.viewRecordingRef)}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{t(($) => $.voice.callBar.hasTranscript)}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <p className="text-muted-foreground mb-1">{t(($) => $.voice.callBar.transcriptRefLabel)}</p>
+                    <p className="font-mono break-all rounded bg-muted p-2">
+                      {transcript?.transcript_ref ?? t(($) => $.voice.callBar.noTranscript)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground mb-1">{t(($) => $.voice.callBar.recordingRefLabel)}</p>
+                    <p className="font-mono break-all rounded bg-muted p-2">
+                      {recording?.recording_ref ?? t(($) => $.voice.callBar.noRecording)}
+                    </p>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <span className="text-muted-foreground text-[10px]">{t(($) => $.voice.callBar.recordingsPermissionMissing)}</span>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Voice: outbound call trigger + dialog ─────────────────────────────────────────────────────
+
+export function OutboundCallButton() {
+  const { t } = useTranslation('customer-engagement');
+  const { can } = usePermission();
+  const { toast } = useToast();
+  const { activeCompanyId } = useOrganizationContext();
+  const [open, setOpen] = useState(false);
+  const [providerId, setProviderId] = useState('');
+  const [toNumber, setToNumber] = useState('');
+  const [purpose, setPurpose] = useState<OutboundCallPurpose>('support');
+
+  const { data: providers } = useVoiceChannelProviders(activeCompanyId ?? undefined);
+  const initiate = useInitiateOutboundCall(providerId);
+
+  if (!can('cep.voice.use')) return null;
+
+  async function handleSubmit() {
+    if (!providerId || !toNumber.trim()) return;
+    try {
+      await initiate.mutateAsync({ to_number: toNumber.trim(), purpose });
+      toast({ title: t(($) => $.voice.outboundDialog.success), type: 'success' });
+      setOpen(false);
+      setToNumber('');
+    } catch {
+      toast({ title: t(($) => $.voice.outboundDialog.failure), type: 'error' });
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+          <PhoneOutgoing className="size-3.5" />
+          {t(($) => $.voice.outboundDialog.trigger)}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t(($) => $.voice.outboundDialog.title)}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium">{t(($) => $.voice.outboundDialog.callingIdentity)}</label>
+            {providers && providers.length > 0 ? (
+              <Select value={providerId} onValueChange={setProviderId}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder={t(($) => $.voice.outboundDialog.callingIdentityPlaceholder)} />
+                </SelectTrigger>
+                <SelectContent>
+                  {providers.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.display_name} — {p.phone_number}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="text-xs text-muted-foreground">{t(($) => $.voice.outboundDialog.noProviders)}</p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium">{t(($) => $.voice.outboundDialog.destination)}</label>
+            <Input
+              value={toNumber}
+              onChange={(e) => setToNumber(e.target.value)}
+              placeholder={t(($) => $.voice.outboundDialog.destinationPlaceholder)}
+              className="text-sm"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium">{t(($) => $.voice.outboundDialog.purpose)}</label>
+            <Select value={purpose} onValueChange={(v) => setPurpose(v as OutboundCallPurpose)}>
+              <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {OUTBOUND_PURPOSES.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {t(($) => $.voice.outboundDialog[`purpose_${p}` as 'purpose_transactional' | 'purpose_requested_callback' | 'purpose_support'])}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>{t(($) => $.voice.outboundDialog.cancel)}</Button>
+          <Button onClick={handleSubmit} disabled={!providerId || !toNumber.trim() || initiate.isPending}>
+            {initiate.isPending ? t(($) => $.voice.outboundDialog.submitting) : t(($) => $.voice.outboundDialog.submit)}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 // ─── Conversation List Item ───────────────────────────────────────────────────
 
@@ -68,6 +321,7 @@ function MessageThread({ conversationId }: { conversationId: string }) {
   const { data: conv } = useConversation(conversationId);
 
   const messages = data?.data ?? [];
+  const activeCall = conv?.provider === 'voice' ? currentCallOf(conv.calls) : null;
 
   async function handleSend() {
     const text = compose.trim();
@@ -91,6 +345,9 @@ function MessageThread({ conversationId }: { conversationId: string }) {
           </Button>
         </div>
       </div>
+
+      {/* Voice: canonical call state, never a raw provider status */}
+      {activeCall && <VoiceCallBar call={activeCall} />}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -306,6 +563,7 @@ export function UnifiedInboxPage() {
               <RefreshCw className="size-3" />
             </Button>
           </div>
+          <OutboundCallButton />
           <div className="flex gap-1">
             <Select value={status || 'all'} onValueChange={(v) => { setStatus(v === 'all' ? '' : v); setPage(1); }}>
               <SelectTrigger className="h-6 text-xs flex-1"><SelectValue /></SelectTrigger>

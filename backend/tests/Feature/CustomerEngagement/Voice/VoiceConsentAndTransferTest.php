@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\CustomerEngagement\Voice;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
 use Modules\Crm\Customers\Domain\Models\Customer;
@@ -16,6 +17,7 @@ use Modules\CustomerEngagement\Voice\Application\Services\VoiceOutboundEligibili
 use Modules\CustomerEngagement\Voice\Domain\Enums\OutboundCallPurpose;
 use Modules\CustomerEngagement\Voice\Domain\Exceptions\OutboundCallNotEligibleException;
 use Modules\CustomerEngagement\Voice\Domain\Exceptions\TelephonyProviderUnavailableException;
+use Modules\Hr\Workforce\Domain\Models\Employee;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
 
@@ -106,7 +108,10 @@ final class VoiceConsentAndTransferTest extends TestCase
         $outcome = app(\Modules\CustomerEngagement\Voice\Application\Services\HumanTransferService::class)
             ->transfer($call, 'customer asked for a human');
 
-        $this->assertSame('fallback_callback', $outcome->result);
+        // TASK-...-016 §3 (Gap A) renamed this outcome from the ambiguous 'fallback_callback'
+        // to the explicitly honest 'transfer_unavailable' — see HumanTransferOutcome/
+        // TransferDestinationResolver's own docblocks.
+        $this->assertSame('transfer_unavailable', $outcome->result);
         $this->assertNotNull($outcome->taskId);
         $this->assertNotNull(ConversationTask::query()->find($outcome->taskId));
     }
@@ -127,14 +132,28 @@ final class VoiceConsentAndTransferTest extends TestCase
             'event_id' => (string) Str::uuid(),
         ]);
 
-        $conversation = $call->conversation;
-        $conversation->update(['assigned_employee_id' => (string) Str::uuid()]);
+        // TASK-...-016 §2 (Gap A): assigned_employee_id must be a real, resolvable users.id
+        // with a real dialable destination for the transfer to reach the provider bridge at
+        // all — a bare random UUID (this test's own pre-016 fixture) now correctly resolves to
+        // NO destination instead of being passed straight through.
+        $agent = User::factory()->create(['company_id' => $company->id, 'phone' => '01055512345']);
+        Employee::create([
+            'company_id' => $company->id,
+            'user_id' => $agent->id,
+            'employee_number' => 'EMP-TEST-1',
+            'first_name' => 'Agent',
+            'last_name' => 'One',
+            'phone' => '01055512345',
+            'status' => 'active',
+        ]);
+        $call->conversation->update(['assigned_employee_id' => (string) $agent->id]);
 
         $outcome = app(\Modules\CustomerEngagement\Voice\Application\Services\HumanTransferService::class)
             ->transfer($call->fresh(), 'escalation');
 
-        // A target IS assigned, but UnavailableTelephonyProvider fails the bridge attempt —
-        // the outcome must report failure honestly, never a fabricated "bridged" success.
+        // A REAL, resolvable target IS assigned, but UnavailableTelephonyProvider fails the
+        // bridge attempt — the outcome must report failure honestly, never a fabricated
+        // "bridged" success.
         $this->assertSame('failed', $outcome->result);
         $this->assertNotNull($outcome->failureReason);
         $this->assertSame(\Modules\CustomerEngagement\Voice\Domain\Enums\CallCanonicalState::Failed, $call->fresh()->canonical_state);

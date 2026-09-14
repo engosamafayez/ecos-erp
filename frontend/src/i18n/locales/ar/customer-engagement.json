@@ -54,7 +54,77 @@
     "channels": {
       "whatsapp": "واتساب",
       "sms": "رسائل نصية",
-      "email": "البريد الإلكتروني"
+      "email": "البريد الإلكتروني",
+      "voice": "مكالمة صوتية"
+    }
+  },
+  "voice": {
+    "callBar": {
+      "state": {
+        "initiated": "بدأت المكالمة",
+        "ringing": "جاري الاتصال",
+        "connected": "متصلة",
+        "ai_active": "يتحدث الذكاء الاصطناعي",
+        "transferring": "جاري التحويل…",
+        "human_active": "موظف بشري نشط",
+        "completed": "انتهت",
+        "failed": "فشلت",
+        "no_answer": "لا يوجد رد",
+        "busy": "الخط مشغول",
+        "cancelled": "أُلغيت"
+      },
+      "handledBy": {
+        "ai": "الذكاء الاصطناعي",
+        "human": "موظف بشري",
+        "both": "الذكاء الاصطناعي ثم موظف بشري"
+      },
+      "verification": {
+        "unverified": "المتصل غير موثّق",
+        "order_corroborated": "تم التحقق"
+      },
+      "direction": {
+        "inbound": "واردة",
+        "outbound": "صادرة"
+      },
+      "duration": "المدة",
+      "transferButton": "تحويل إلى موظف بشري",
+      "transferDialogTitle": "تحويل المكالمة إلى موظف بشري",
+      "transferReasonLabel": "سبب التحويل",
+      "transferReasonPlaceholder": "لماذا تحتاج هذه المكالمة إلى موظف بشري؟",
+      "transferSubmit": "طلب التحويل",
+      "transferSubmitting": "جارٍ طلب التحويل…",
+      "transferResult": {
+        "bridged": "تم التحويل إلى موظف بشري.",
+        "transfer_unavailable": "لا يوجد موظف متاح حاليًا — تم جدولة معاودة اتصال.",
+        "failed": "تعذّر إتمام التحويل."
+      },
+      "recordingsPermissionMissing": "الاطلاع على النصوص والتسجيلات يتطلب صلاحية \"الاستماع إلى تسجيلات المكالمات الصوتية\".",
+      "hasTranscript": "يتوفر نص للمكالمة",
+      "hasRecording": "يتوفر تسجيل للمكالمة",
+      "viewTranscriptRef": "عرض مرجع النص",
+      "viewRecordingRef": "عرض مرجع التسجيل",
+      "noTranscript": "لا يتوفر نص لهذه المكالمة.",
+      "noRecording": "لا يتوفر تسجيل لهذه المكالمة.",
+      "transcriptRefLabel": "مرجع النص",
+      "recordingRefLabel": "مرجع التسجيل"
+    },
+    "outboundDialog": {
+      "trigger": "اتصال",
+      "title": "بدء مكالمة صوتية",
+      "callingIdentity": "هوية الاتصال",
+      "callingIdentityPlaceholder": "اختر رقم هاتف العلامة التجارية…",
+      "noProviders": "لا توجد أرقام مكالمات صوتية مُعدّة لهذه الشركة بعد.",
+      "destination": "رقم الوجهة",
+      "destinationPlaceholder": "مثال: 01055512345",
+      "purpose": "الغرض",
+      "purpose_transactional": "معاملة",
+      "purpose_requested_callback": "معاودة اتصال بطلب العميل",
+      "purpose_support": "دعم فني",
+      "cancel": "إلغاء",
+      "submit": "اتصال",
+      "submitting": "جارٍ الاتصال…",
+      "success": "تم بدء المكالمة.",
+      "failure": "تعذّر بدء المكالمة."
     }
   }
 }

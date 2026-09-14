@@ -54,7 +54,77 @@
     "channels": {
       "whatsapp": "WhatsApp",
       "sms": "SMS",
-      "email": "Email"
+      "email": "Email",
+      "voice": "Voice"
+    }
+  },
+  "voice": {
+    "callBar": {
+      "state": {
+        "initiated": "Initiated",
+        "ringing": "Ringing",
+        "connected": "Connected",
+        "ai_active": "AI handling",
+        "transferring": "Transferring…",
+        "human_active": "Human active",
+        "completed": "Completed",
+        "failed": "Failed",
+        "no_answer": "No answer",
+        "busy": "Busy",
+        "cancelled": "Cancelled"
+      },
+      "handledBy": {
+        "ai": "AI",
+        "human": "Human",
+        "both": "AI, then human"
+      },
+      "verification": {
+        "unverified": "Unverified caller",
+        "order_corroborated": "Verified"
+      },
+      "direction": {
+        "inbound": "Inbound",
+        "outbound": "Outbound"
+      },
+      "duration": "Duration",
+      "transferButton": "Transfer to human",
+      "transferDialogTitle": "Transfer call to a human agent",
+      "transferReasonLabel": "Reason for transfer",
+      "transferReasonPlaceholder": "Why does this call need a human agent?",
+      "transferSubmit": "Request transfer",
+      "transferSubmitting": "Requesting transfer…",
+      "transferResult": {
+        "bridged": "Transferred to a human agent.",
+        "transfer_unavailable": "No agent is available right now — a callback has been scheduled.",
+        "failed": "The transfer could not be completed."
+      },
+      "recordingsPermissionMissing": "Viewing transcripts and recordings requires the \"Listen to Voice call recordings\" permission.",
+      "hasTranscript": "Transcript available",
+      "hasRecording": "Recording available",
+      "viewTranscriptRef": "View transcript reference",
+      "viewRecordingRef": "View recording reference",
+      "noTranscript": "No transcript is available for this call.",
+      "noRecording": "No recording is available for this call.",
+      "transcriptRefLabel": "Transcript reference",
+      "recordingRefLabel": "Recording reference"
+    },
+    "outboundDialog": {
+      "trigger": "Call",
+      "title": "Start a Voice call",
+      "callingIdentity": "Calling identity",
+      "callingIdentityPlaceholder": "Select a Brand phone number…",
+      "noProviders": "No Voice numbers are configured for this company yet.",
+      "destination": "Destination number",
+      "destinationPlaceholder": "e.g. 01055512345",
+      "purpose": "Purpose",
+      "purpose_transactional": "Transactional",
+      "purpose_requested_callback": "Requested callback",
+      "purpose_support": "Support",
+      "cancel": "Cancel",
+      "submit": "Call",
+      "submitting": "Calling…",
+      "success": "Call initiated.",
+      "failure": "The call could not be started."
     }
   }
 }

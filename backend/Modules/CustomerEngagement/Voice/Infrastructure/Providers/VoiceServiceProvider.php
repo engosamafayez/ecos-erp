@@ -16,8 +16,10 @@ use Modules\AI\Application\Tools\GetOrderSummaryTool;
 use Modules\AI\Application\Tools\GetStockAvailabilityTool;
 use Modules\CustomerEngagement\Voice\Application\Contracts\RealtimeVoiceProviderContract;
 use Modules\CustomerEngagement\Voice\Application\Contracts\TelephonyProviderContract;
+use Modules\CustomerEngagement\Voice\Application\Services\CallerVerificationService;
 use Modules\CustomerEngagement\Voice\Application\Services\VoiceAIToolInvoker;
 use Modules\CustomerEngagement\Voice\Application\Services\VoiceAIToolRegistry;
+use Modules\CustomerEngagement\Voice\Application\Services\VoiceToolCatalogService;
 use Modules\CustomerEngagement\Voice\Application\Tools\CreateFollowUpTool;
 use Modules\CustomerEngagement\Voice\Application\Tools\CreateSupportTicketTool;
 use Modules\CustomerEngagement\Voice\Application\Tools\ScheduleCallbackTool;
@@ -71,7 +73,9 @@ final class VoiceServiceProvider extends ServiceProvider
             ]);
         });
 
-        // §10 — 'cep.voice.use', never 'ai.assistant.use' (§35).
+        // §10 — 'cep.voice.use', never 'ai.assistant.use' (§35). Gap B (016 §5): also wires the
+        // catalogue + verification service the invoker needs to re-check verification at
+        // execution time, independent of whatever a session was configured to offer.
         $this->app->bind(VoiceAIToolInvoker::class, function (Application $app): VoiceAIToolInvoker {
             return new VoiceAIToolInvoker(
                 $app->make(VoiceAIToolRegistry::class),
@@ -79,6 +83,9 @@ final class VoiceServiceProvider extends ServiceProvider
                 $app->make(TenantOwnershipResolver::class),
                 $app->make(AIAuditService::class),
                 'cep.voice.use',
+                $app->make(VoiceToolCatalogService::class),
+                $app->make(CallerVerificationService::class),
+                $app->make(AIAuditService::class),
             );
         });
     }
