@@ -45,6 +45,13 @@ class ProfitabilityController extends Controller
         return response()->json(['data' => $this->service->byProject($this->companyId($request), $from, $to)]);
     }
 
+    public function brand(Request $request): JsonResponse
+    {
+        [$from, $to] = $this->financeWindow($request);
+
+        return response()->json(['data' => $this->service->byBrand($this->companyId($request), $from, $to)]);
+    }
+
     public function customer(Request $request): JsonResponse
     {
         [$from, $to] = $this->financeWindow($request);

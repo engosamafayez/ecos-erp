@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Logistics\Operations\Domain\Services;
 
 use Illuminate\Support\Carbon;
+use Modules\Logistics\Carriers\Domain\Models\CarrierShipment;
 use Modules\Logistics\Dispatch\Domain\Services\DispatchMonitoringService;
 use Modules\Logistics\Operations\Domain\Events\ExecutiveSummaryGenerated;
 
@@ -27,6 +28,12 @@ class EnterpriseSummaryService
         private readonly DispatchMonitoringService $dispatch,
         private readonly ExceptionQueryService $exceptions,
         private readonly ReadinessValidationService $readiness,
+        // TASK-ECOS-V1.1-OPS-04-TASK1 — Shipping lifecycle / Custody-Returns /
+        // Settlement digests, same "lifted from an existing service" pattern
+        // as every constructor argument above.
+        private readonly ShippingExecutionMonitoringService $shippingExecution,
+        private readonly CustodyReturnsMonitoringService $custodyReturns,
+        private readonly SettlementMonitoringService $settlementMonitoring,
     ) {}
 
     /**
@@ -173,6 +180,96 @@ class EnterpriseSummaryService
             'overdue_for_escalation' => $summary['overdue_for_escalation'],
             'by_source' => $summary['by_source'],
             'by_category' => $summary['by_category'],
+        ];
+    }
+
+    /**
+     * Shipping Lifecycle Summary — trip stages, delivery-stop outcomes, group/
+     * zone reconciliation (TASK-ECOS-V1.1-OPS-04-TASK1 §3/§4).
+     *
+     * @return array<string, mixed>
+     */
+    public function shipping(?string $companyId = null): array
+    {
+        return [
+            'trips' => $this->shippingExecution->trips($companyId),
+            'groups_awaiting_trip_assignment' => $this->shippingExecution->groupsAwaitingTripAssignment($companyId),
+            'delivery_stops' => $this->shippingExecution->deliveryStops($companyId),
+            'window_order_reconciliation' => $this->shippingExecution->windowOrderReconciliation($companyId),
+        ];
+    }
+
+    /**
+     * Custody Summary — physical goods with Driver/Vehicle vs. warehouse
+     * (§6). Every figure is a real VehicleInventoryItem/
+     * VehicleShiftReconciliationLine column, never derived from order/delivery
+     * status arithmetic.
+     *
+     * @return array<string, mixed>
+     */
+    public function custody(?string $companyId = null): array
+    {
+        return $this->custodyReturns->custody($companyId);
+    }
+
+    /**
+     * Returns Summary — delivery-outcome-Returned vs. physical-return-
+     * confirmed vs. warehouse-receipt-completed (§7). None of these implies
+     * Inventory has moved.
+     *
+     * @return array<string, mixed>
+     */
+    public function returns(?string $companyId = null): array
+    {
+        return $this->custodyReturns->returns($companyId);
+    }
+
+    /**
+     * Settlement Summary — TripSettlement status counts plus the existing
+     * collection_difference_pending signal (§8/§9). Settlement-closure vs.
+     * physical-return policy is exposed as independent facts, never coupled
+     * here.
+     *
+     * @return array<string, mixed>
+     */
+    public function settlement(?string $companyId = null): array
+    {
+        return $this->settlementMonitoring->settlement($companyId);
+    }
+
+    /**
+     * External Carrier Summary — factual CarrierShipment visibility only
+     * (§10/§11 of the OPS-04-TASK1 spec, reusing OPS-03's CarrierShipment
+     * exactly as instructed). No carrier payable cost, insurance, COD
+     * settlement or Daily Transfer Cost — none of those has a verified source
+     * yet, so none is exposed.
+     *
+     * @return array<string, mixed>
+     */
+    public function externalCarrier(?string $companyId = null): array
+    {
+        $counts = CarrierShipment::query()
+            ->when($companyId !== null, fn ($q) => $q->where('company_id', $companyId))
+            ->selectRaw('raw_status, count(*) as total')
+            ->groupBy('raw_status')
+            ->pluck('total', 'raw_status');
+
+        return [
+            'total_shipments' => (int) $counts->sum(),
+            'tendered_awaiting_status' => (int) CarrierShipment::query()
+                ->when($companyId !== null, fn ($q) => $q->where('company_id', $companyId))
+                ->whereNotNull('external_reference')
+                ->whereNull('raw_status')
+                ->count(),
+            'not_yet_tendered' => (int) CarrierShipment::query()
+                ->when($companyId !== null, fn ($q) => $q->where('company_id', $companyId))
+                ->whereNull('external_reference')
+                ->count(),
+            // Raw carrier status is the honest signal here — no forced mapping
+            // onto DeliveryStopStatus at the summary level (the per-shipment
+            // outcome already applied through ApplyCarrierDeliveryOutcomeService
+            // is readable on the linked DeliveryStop itself, not recomputed here).
+            'by_raw_status' => $counts->filter(fn ($v, $k) => $k !== null)->all(),
         ];
     }
 }

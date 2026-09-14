@@ -234,6 +234,7 @@ use Modules\Logistics\Operations\Presentation\Http\Controllers\CapacityOperation
 use Modules\Logistics\Operations\Presentation\Http\Controllers\DashboardController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\DiagnosticsController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\ExceptionController as OperationsExceptionController;
+use Modules\Logistics\Operations\Presentation\Http\Controllers\ExpectedReturnsController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\OperationalHealthController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\ReadinessController;
 use Modules\Logistics\Operations\Presentation\Http\Controllers\ResourcePoolController;
@@ -3100,7 +3101,19 @@ Route::middleware(['auth:sanctum', 'permission:operations.view'])
             Route::get('/dispatch', [SummaryController::class, 'dispatch']);
             Route::get('/fleet', [SummaryController::class, 'fleet']);
             Route::get('/exceptions', [SummaryController::class, 'exceptions']);
+            // TASK-ECOS-V1.1-OPS-04-TASK1 — Control Tower additions, same
+            // digest pattern, same permission:operations.view gate above.
+            Route::get('/shipping', [SummaryController::class, 'shipping']);
+            Route::get('/custody', [SummaryController::class, 'custody']);
+            Route::get('/returns', [SummaryController::class, 'returns']);
+            Route::get('/settlement', [SummaryController::class, 'settlement']);
+            Route::get('/external-carrier', [SummaryController::class, 'externalCarrier']);
         });
+
+        // E. Expected Driver Returns — the one dedicated, paginated endpoint
+        // this task's own scope allows alongside the additive summaries above
+        // (a queue cannot fit cleanly into a single digest payload).
+        Route::get('/expected-returns', [ExpectedReturnsController::class, 'index']);
     });
 
 // ── Logistics V2 — Enterprise Intelligence (EPIC-LOG-V2-002) ──────────────────
@@ -3623,6 +3636,7 @@ Route::middleware('auth:sanctum')->prefix('finance/intelligence')->group(functio
             Route::get('/branch', [FinanceProfitabilityController::class, 'branch']);
             Route::get('/cost-center', [FinanceProfitabilityController::class, 'costCenter']);
             Route::get('/project', [FinanceProfitabilityController::class, 'project']);
+            Route::get('/brand', [FinanceProfitabilityController::class, 'brand']);
             Route::get('/customer', [FinanceProfitabilityController::class, 'customer']);
             Route::get('/product', [FinanceProfitabilityController::class, 'product']);
             Route::get('/channel', [FinanceProfitabilityController::class, 'channel']);

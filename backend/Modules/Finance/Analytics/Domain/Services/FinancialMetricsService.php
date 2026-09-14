@@ -209,7 +209,7 @@ final class FinancialMetricsService
      * set — the primitive behind branch/cost-center profitability.
      *
      * @param  list<AccountCategory>  $categories
-     * @return array<string, float>  dimension value → signed amount
+     * @return array<string, float> dimension value → signed amount
      */
     public function activityByDimension(string $companyId, array $categories, string $column, Carbon $from, Carbon $to): array
     {
@@ -233,6 +233,35 @@ final class FinancialMetricsService
         }
 
         return $out;
+    }
+
+    /**
+     * The total signed activity for the given categories, undivided by any
+     * dimension — the same rows {@see activityByDimension()} would sum per
+     * dimension, PLUS whatever it excludes for having a NULL dimension.
+     *
+     * Exists so a caller can compute an exact "unallocated" residual
+     * (this total minus the sum of a dimensioned breakdown) without the two
+     * figures ever risking drift from slightly different filters — both
+     * queries share the same company/category/status/date-range predicates.
+     *
+     * @param  list<AccountCategory>  $categories
+     */
+    public function categoryTotal(string $companyId, array $categories, Carbon $from, Carbon $to): float
+    {
+        $normal = $categories[0]->type()->normalBalance();
+
+        $row = DB::table('finance_journal_lines as l')
+            ->join('finance_journal_entries as e', 'e.id', '=', 'l.journal_entry_id')
+            ->join('finance_accounts as a', 'a.id', '=', 'l.account_id')
+            ->where('l.company_id', $companyId)
+            ->whereIn('a.account_category', array_map(static fn (AccountCategory $c) => $c->value, $categories))
+            ->whereIn('e.status', $this->postedStatuses())
+            ->whereBetween('e.entry_date', [$from->toDateString(), $to->toDateString()])
+            ->selectRaw('COALESCE(SUM(l.debit),0) as d, COALESCE(SUM(l.credit),0) as c')
+            ->first();
+
+        return round($normal === NormalBalance::Debit ? (float) $row->d - (float) $row->c : (float) $row->c - (float) $row->d, 4);
     }
 
     // ── Internals ─────────────────────────────────────────────────────────────
@@ -318,7 +347,7 @@ final class FinancialMetricsService
 
     private function pct(float $numerator, float $denominator): float
     {
-        return $denominator != 0.0 ? round($numerator / $denominator * 100, 2) : 0.0;
+        return $denominator !== 0.0 ? round($numerator / $denominator * 100, 2) : 0.0;
     }
 
     /** @return list<string> */
